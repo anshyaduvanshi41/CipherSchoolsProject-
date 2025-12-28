@@ -1,0 +1,94 @@
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+.app-header {
+  padding: 20px;
+  background: #020617;
+  border-bottom: 1px solid #1e293b;
+}
+
+.layout {
+  display: flex;
+  height: calc(100vh - 90px);
+}
+
+.sidebar {
+  width: 320px;
+  background: #020617;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.workspace {
+  flex: 1;
+  padding: 24px;
+}
+
+.assignment-card {
+  background: #020617;
+  border: 1px solid #1e293b;
+  padding: 12px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.assignment-card:hover {
+  background: #020617;
+  border-color: #38bdf8;
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.badge.easy { background: #16a34a; }
+.badge.medium { background: #eab308; }
+.badge.hard { background: #dc2626; }
+
+.difficulty-filter button {
+  margin-right: 8px;
+  background: #1e293b;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.difficulty-filter .active {
+  background: #38bdf8;
+  color: black;
+}
+
+.sql-editor textarea {
+  width: 100%;
+  height: 160px;
+  background: #020617;
+  color: #e5e7eb;
+  border: 1px solid #1e293b;
+  padding: 12px;
+  font-family: monospace;
+}
+
+.run-btn, .hint-btn {
+  margin-top: 12px;
+  margin-right: 8px;
+  padding: 8px 14px;
+  border: none;
+  cursor: pointer;
+}
+
+.run-btn {
+  background: #38bdf8;
+  color: black;
+}
+
+.hint-btn {
+  background: #22c55e;
+}
