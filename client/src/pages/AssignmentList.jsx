@@ -25,7 +25,7 @@ export default function AssignmentList() {
         <DifficultyFilter level={level} setLevel={setLevel} />
 
         {assignments
-          .filter(a => (a.difficulty || "Easy") === level)
+          .filter(a => (a.description || "Easy") === level)
           .map(a => (
             <AssignmentCard
               key={a._id}

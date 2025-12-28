@@ -1,4 +1,4 @@
-const API_BASE = "https://learningsql.onrender.com";
+const API_BASE = import.meta.env.VITE_API_BASE;
 
 export const getAssignments = async () => {
   const res = await fetch(`${API_BASE}/api/assignments`);
