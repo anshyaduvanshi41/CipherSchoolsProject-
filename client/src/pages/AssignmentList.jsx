@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { getAssignments } from '../api/api.js';
-import DifficultyFilter from './DifficultyFilter.jsx';
-import AssignmentCard from './AssignmentCard.jsx';
-import SqlEditor from './SqlEditor.jsx';
+import DifficultyFilter from '../components/DifficultyFilter.jsx';
+import AssignmentCard from '../components/AssignmentCard.jsx';
+import SqlEditor from '../components/SqlEditor.jsx';
 import '../styles/assignments.scss';
 
 const AssignmentList = () => {
