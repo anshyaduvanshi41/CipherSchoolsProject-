@@ -1,88 +1,91 @@
 import { useEffect, useState } from "react";
 import { getAssignments } from "../api/api";
+import "../styles/assignments.scss";
 
 export default function AssignmentList() {
   const [assignments, setAssignments] = useState([]);
-  const [level, setLevel] = useState("Easy");
-  const [active, setActive] = useState(null);
+  const [difficulty, setDifficulty] = useState("Easy");
+  const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getAssignments()
-      .then(data => {
+    async function load() {
+      try {
+        const data = await getAssignments();
         setAssignments(data);
-      })
-      .catch(err => {
-        console.error("Assignment fetch error:", err);
-      });
+      } catch (err) {
+        console.error("Failed to load assignments", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
   }, []);
 
+  // IMPORTANT: filter safe rakha hai
   const filtered = assignments.filter(
-    a => a.description === level
+    a =>
+      a.description &&
+      a.description.toLowerCase() === difficulty.toLowerCase()
   );
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: "#020617", color: "#fff" }}>
-      
-      {/* LEFT PANEL */}
-      <div style={{ width: "40%", padding: "20px" }}>
+    <div className="layout">
+      {/* LEFT SIDEBAR */}
+      <aside className="sidebar">
         <h2>Assignments</h2>
 
-        <div style={{ marginBottom: "20px" }}>
-          {["Easy", "Medium", "Hard"].map(l => (
+        <div className="tabs">
+          {["Easy", "Medium", "Hard"].map(d => (
             <button
-              key={l}
+              key={d}
+              className={difficulty === d ? "active" : ""}
               onClick={() => {
-                setLevel(l);
-                setActive(null);
-              }}
-              style={{
-                marginRight: "10px",
-                padding: "8px 14px",
-                background: level === l ? "#22d3ee" : "#1e293b",
-                color: "#000",
-                border: "none",
-                cursor: "pointer"
+                setDifficulty(d);
+                setSelected(null);
               }}
             >
-              {l}
+              {d}
             </button>
           ))}
         </div>
 
-        {filtered.length === 0 && <p>No assignments</p>}
+        {loading && <p className="muted">Loading...</p>}
+        {!loading && filtered.length === 0 && (
+          <p className="muted">No assignments available</p>
+        )}
 
-        {filtered.map(a => (
-          <div
-            key={a._id}
-            onClick={() => setActive(a)}
-            style={{
-              padding: "12px",
-              marginBottom: "10px",
-              background: "#0f172a",
-              border: active?._id === a._id
-                ? "2px solid #22d3ee"
-                : "1px solid #334155",
-              cursor: "pointer"
-            }}
-          >
-            <h4>{a.title}</h4>
-            <p>{a.question}</p>
+        <div className="list">
+          {filtered.map(a => (
+            <div
+              key={a._id}
+              className={`card ${
+                selected?._id === a._id ? "selected" : ""
+              }`}
+              onClick={() => setSelected(a)}
+            >
+              <h4>{a.title}</h4>
+              <p>{a.question}</p>
+            </div>
+          ))}
+        </div>
+      </aside>
+
+      {/* RIGHT CONTENT */}
+      <main className="content">
+        {!selected ? (
+          <div className="empty">
+            <h2>Select an assignment to start</h2>
+            <p>Choose a problem from the left panel</p>
           </div>
-        ))}
-      </div>
-
-      {/* RIGHT PANEL */}
-      <div style={{ width: "60%", padding: "20px", background: "#020617" }}>
-        {!active ? (
-          <h3>Select an assignment to start</h3>
         ) : (
           <>
-            <h2>{active.title}</h2>
-            <p>{active.question}</p>
+            <h1>{selected.title}</h1>
+            <p className="question">{selected.question}</p>
 
-            <h4>Sample Tables</h4>
-            {active.sampleTables.map(t => (
-              <div key={t.tableName}>
+            <h3>Sample Tables</h3>
+            {selected.sampleTables?.map(t => (
+              <div key={t.tableName} className="table-box">
                 <strong>{t.tableName}</strong>
                 <ul>
                   {t.columns.map(c => (
@@ -95,7 +98,7 @@ export default function AssignmentList() {
             ))}
           </>
         )}
-      </div>
+      </main>
     </div>
   );
 }
