@@ -11,6 +11,7 @@ const AssignmentList = () => {
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [filteredAssignments, setFilteredAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchAssignments();
@@ -18,17 +19,30 @@ const AssignmentList = () => {
 
   const fetchAssignments = async () => {
     try {
+      setLoading(true);
+      setError(null);
+      console.log('Fetching assignments...');
+      
       const data = await getAssignments();
-      setAssignments(data);
-      setFilteredAssignments(data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching assignments:', error);
+      console.log('Assignments received:', data);
+      
+      if (!data || data.length === 0) {
+        console.warn('No assignments found in database');
+        setError('No assignments found. Please add assignments to the database.');
+      }
+      
+      setAssignments(data || []);
+      setFilteredAssignments(data || []);
+    } catch (err) {
+      console.error('Error fetching assignments:', err);
+      setError(`Failed to load assignments: ${err.message}`);
+    } finally {
       setLoading(false);
     }
   };
 
   const handleDifficultyChange = (difficulty) => {
+    console.log('Filtering by difficulty:', difficulty);
     setSelectedDifficulty(difficulty);
     
     if (difficulty === null) {
@@ -37,10 +51,10 @@ const AssignmentList = () => {
       const filtered = assignments.filter(
         (assignment) => assignment.difficulty?.toLowerCase() === difficulty.toLowerCase()
       );
+      console.log('Filtered assignments:', filtered);
       setFilteredAssignments(filtered);
     }
     
-    // Reset selected assignment when filtering
     setSelectedAssignment(null);
   };
 
@@ -57,15 +71,27 @@ const AssignmentList = () => {
         />
         
         <div className="assignment-cards">
+          {error && (
+            <div className="error-box">
+              <p>{error}</p>
+              <button onClick={fetchAssignments} className="retry-btn">
+                Retry
+              </button>
+            </div>
+          )}
+          
           {filteredAssignments.length === 0 ? (
             <p className="no-assignments">No assignments found</p>
           ) : (
             filteredAssignments.map((assignment) => (
               <AssignmentCard
-                key={assignment._id}
+                key={assignment._id || assignment.id}
                 assignment={assignment}
                 isSelected={selectedAssignment?._id === assignment._id}
-                onSelect={() => setSelectedAssignment(assignment)}
+                onSelect={() => {
+                  console.log('Selected assignment:', assignment);
+                  setSelectedAssignment(assignment);
+                }}
               />
             ))
           )}
