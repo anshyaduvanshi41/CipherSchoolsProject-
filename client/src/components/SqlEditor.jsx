@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Editor from '@monaco-editor/react';
 import { executeSQL, getHint } from '../api/api.js';
 import '../styles/assignments.scss';
 
@@ -9,6 +10,19 @@ const SqlEditor = ({ assignment }) => {
   const [loading, setLoading] = useState(false);
   const [hintLoading, setHintLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+
+  if (!assignment) {
+    return (
+      <div className="sql-editor">
+        <div className="empty-state">
+          <div className="empty-icon">📋</div>
+          <h2>No Assignment Selected</h2>
+          <p>Choose an assignment from the left panel to start practicing SQL</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleExecute = async () => {
     if (!query.trim()) {
@@ -18,18 +32,20 @@ const SqlEditor = ({ assignment }) => {
 
     setLoading(true);
     setError(null);
-    
+    setSuccess(null);
+
     try {
       const response = await executeSQL(query);
       if (response.error) {
-        setError(response.error);
+        setError(`❌ ${response.error}`);
         setResult(null);
       } else {
         setResult(response);
+        setSuccess(`✅ Query executed successfully! (${response.length} rows)`);
         setError(null);
       }
     } catch (err) {
-      setError('Failed to execute query: ' + err.message);
+      setError(`❌ Failed to execute query: ${err.message}`);
       setResult(null);
     } finally {
       setLoading(false);
@@ -37,7 +53,10 @@ const SqlEditor = ({ assignment }) => {
   };
 
   const handleGetHint = async () => {
-    if (!assignment) return;
+    if (!query.trim()) {
+      setError('Write your query first to get a hint');
+      return;
+    }
 
     setHintLoading(true);
     setError(null);
@@ -45,131 +64,195 @@ const SqlEditor = ({ assignment }) => {
     try {
       const response = await getHint(assignment.question, query);
       if (response.error) {
-        setError('Failed to get hint: ' + response.error);
+        setError(`❌ Failed to get hint: ${response.error}`);
       } else {
         setHint(response.hint);
       }
     } catch (err) {
-      setError('Failed to get hint: ' + err.message);
+      setError(`❌ Failed to get hint: ${err.message}`);
     } finally {
       setHintLoading(false);
     }
   };
 
+  const getDifficultyColor = (difficulty) => {
+    switch (difficulty?.toLowerCase()) {
+      case 'easy':
+        return '#10b981';
+      case 'medium':
+        return '#f59e0b';
+      case 'hard':
+        return '#ef4444';
+      default:
+        return '#6b7280';
+    }
+  };
+
   return (
     <div className="sql-editor">
+      {/* Header */}
       <div className="editor-header">
-        <h1>{assignment.title}</h1>
-        <p className="difficulty" style={{
-          color: assignment.difficulty === 'easy' ? '#10b981' : 
-                 assignment.difficulty === 'medium' ? '#f59e0b' : 
-                 '#ef4444'
-        }}>
+        <div>
+          <h2>{assignment.title}</h2>
+          <p className="assignment-question">{assignment.question}</p>
+        </div>
+        <span
+          className="difficulty-badge"
+          style={{ backgroundColor: getDifficultyColor(assignment.difficulty) }}
+        >
           {assignment.difficulty?.toUpperCase()}
-        </p>
+        </span>
       </div>
 
-      <div className="assignment-details">
-        <div className="question-section">
-          <h3>Question</h3>
-          <p>{assignment.question}</p>
-        </div>
-
-        {assignment.sampleTables && assignment.sampleTables.length > 0 && (
-          <div className="tables-section">
-            <h3>Sample Tables</h3>
-            {assignment.sampleTables.map((table) => (
-              <div key={table.tableName} className="table-info">
+      {/* Sample Data Section */}
+      {assignment.sampleTables && assignment.sampleTables.length > 0 && (
+        <div className="sample-data-section">
+          <h3>📊 Sample Tables Schema</h3>
+          <div className="sample-tables">
+            {assignment.sampleTables.map((table, idx) => (
+              <div key={idx} className="table-schema">
                 <h4>{table.tableName}</h4>
-                <div className="columns-list">
-                  {table.columns.map((col) => (
-                    <span key={col.columnName} className="column">
-                      {col.columnName} ({col.dataType})
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="editor-section">
-        <h3>Write Your SQL Query</h3>
-        <textarea
-          className="sql-input"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="SELECT * FROM table_name;"
-          rows="8"
-        />
-
-        <div className="button-group">
-          <button 
-            className="btn btn-primary" 
-            onClick={handleExecute}
-            disabled={loading}
-          >
-            {loading ? 'Executing...' : '▶ Execute'}
-          </button>
-          <button 
-            className="btn btn-secondary" 
-            onClick={handleGetHint}
-            disabled={hintLoading}
-          >
-            {hintLoading ? 'Getting Hint...' : '💡 Get Hint'}
-          </button>
-        </div>
-
-        {error && (
-          <div className="error-message">
-            <strong>Error:</strong> {error}
-          </div>
-        )}
-
-        {hint && (
-          <div className="hint-box">
-            <strong>Hint:</strong>
-            <p>{hint}</p>
-            <button 
-              className="close-hint"
-              onClick={() => setHint(null)}
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        {result && (
-          <div className="result-section">
-            <h4>Results</h4>
-            {Array.isArray(result) && result.length > 0 ? (
-              <div className="results-table">
-                <table>
+                <table className="schema-table">
                   <thead>
                     <tr>
-                      {Object.keys(result[0]).map((key) => (
-                        <th key={key}>{key}</th>
-                      ))}
+                      <th>Column Name</th>
+                      <th>Data Type</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {result.map((row, idx) => (
-                      <tr key={idx}>
-                        {Object.values(row).map((val, colIdx) => (
-                          <td key={colIdx}>{String(val)}</td>
-                        ))}
+                    {table.columns?.map((col, colIdx) => (
+                      <tr key={colIdx}>
+                        <td className="column-name">{col.columnName}</td>
+                        <td className="data-type">{col.dataType}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            ) : (
-              <p className="no-results">No results returned</p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Editor Section */}
+      <div className="editor-section">
+        <h3>✍️ Write Your SQL Query</h3>
+        <div className="monaco-wrapper">
+          <Editor
+            height="300px"
+            defaultLanguage="sql"
+            value={query}
+            onChange={(value) => {
+              setQuery(value || '');
+              setError(null);
+            }}
+            theme="light"
+            options={{
+              minimap: { enabled: false },
+              wordWrap: 'on',
+              fontSize: 14,
+              lineNumbers: 'on',
+              scrollBeyondLastLine: false,
+              automaticLayout: true,
+              padding: { top: 10 },
+            }}
+          />
+        </div>
+
+        {/* Action Buttons */}
+        <div className="button-group">
+          <button
+            className="btn btn-primary"
+            onClick={handleExecute}
+            disabled={loading}
+          >
+            {loading ? '⏳ Executing...' : '▶️ Execute Query'}
+          </button>
+          <button
+            className="btn btn-secondary"
+            onClick={handleGetHint}
+            disabled={hintLoading}
+          >
+            {hintLoading ? '⏳ Loading...' : '💡 Get Hint'}
+          </button>
+        </div>
+      </div>
+
+      {/* Messages */}
+      {error && (
+        <div className="error-message">
+          <strong>Error</strong>
+          <p>{error}</p>
+        </div>
+      )}
+
+      {success && (
+        <div className="success-message">
+          <p>{success}</p>
+        </div>
+      )}
+
+      {/* Hint Box */}
+      {hint && (
+        <div className="hint-box">
+          <div className="hint-header">
+            <strong>💡 Hint from AI Tutor</strong>
+            <button
+              className="close-hint"
+              onClick={() => setHint(null)}
+              aria-label="Close hint"
+            >
+              ✕
+            </button>
+          </div>
+          <p>{hint}</p>
+        </div>
+      )}
+
+      {/* Results Section */}
+      {result && result.length > 0 && (
+        <div className="result-section">
+          <h4>📈 Query Results</h4>
+          <div className="results-table">
+            <table>
+              <thead>
+                <tr>
+                  {Object.keys(result[0]).map((key) => (
+                    <th key={key}>{key}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {result.slice(0, 50).map((row, idx) => (
+                  <tr key={idx}>
+                    {Object.values(row).map((val, colIdx) => (
+                      <td key={colIdx}>
+                        {val === null ? (
+                          <span className="null-value">NULL</span>
+                        ) : (
+                          String(val)
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {result.length > 50 && (
+              <p className="results-note">
+                Showing 50 of {result.length} rows
+              </p>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Empty Results */}
+      {result && result.length === 0 && (
+        <div className="result-section">
+          <p className="no-results">✅ Query executed successfully (0 rows)</p>
+        </div>
+      )}
     </div>
   );
 };

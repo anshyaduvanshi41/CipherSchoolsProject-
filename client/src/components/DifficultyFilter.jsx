@@ -6,23 +6,25 @@ const DifficultyFilter = ({ selectedDifficulty, onDifficultyChange }) => {
 
   return (
     <div className="difficulty-filter">
-      <h3>Filter by Difficulty</h3>
+      <h3>🎯 Difficulty Level</h3>
       <div className="filter-buttons">
-        {difficulties.map((level) => (
-          <button
-            key={level}
-            className={`filter-btn ${selectedDifficulty === level ? 'active' : ''}`}
-            onClick={() => onDifficultyChange(level)}
-          >
-            {level.charAt(0).toUpperCase() + level.slice(1)}
-          </button>
-        ))}
         <button
           className={`filter-btn ${selectedDifficulty === null ? 'active' : ''}`}
           onClick={() => onDifficultyChange(null)}
         >
-          All
+          All Levels
         </button>
+        {difficulties.map((difficulty) => (
+          <button
+            key={difficulty}
+            className={`filter-btn ${
+              selectedDifficulty === difficulty ? 'active' : ''
+            }`}
+            onClick={() => onDifficultyChange(difficulty)}
+          >
+            {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+          </button>
+        ))}
       </div>
     </div>
   );

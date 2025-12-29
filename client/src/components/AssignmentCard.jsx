@@ -19,14 +19,22 @@ const AssignmentCard = ({ assignment, isSelected, onSelect }) => {
     <div
       className={`assignment-card ${isSelected ? 'active' : ''}`}
       onClick={onSelect}
+      role="button"
+      tabIndex={0}
+      onKeyPress={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          onSelect();
+        }
+      }}
+      aria-selected={isSelected}
     >
       <div className="card-header">
         <h4>{assignment.title}</h4>
-        <span 
+        <span
           className="difficulty-badge"
           style={{ backgroundColor: getDifficultyColor(assignment.difficulty) }}
         >
-          {assignment.difficulty}
+          {assignment.difficulty?.charAt(0).toUpperCase()}
         </span>
       </div>
       <p className="card-description">
