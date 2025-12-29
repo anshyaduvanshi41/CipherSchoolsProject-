@@ -1,112 +1,99 @@
-import React, { useState, useEffect } from 'react';
-import { getAssignments } from '../api/api.js';
-import DifficultyFilter from './DifficultyFilter.jsx';
-import AssignmentCard from './AssignmentCard.jsx';
-import SqlEditor from './SqlEditor.jsx';
-import '../styles/assignments.scss';
+import { useEffect, useState } from "react";
+import { getAssignments } from "../api/api";
+import "../styles/assignments.scss";
 
-const AssignmentList = () => {
+export default function AssignmentList() {
   const [assignments, setAssignments] = useState([]);
-  const [selectedDifficulty, setSelectedDifficulty] = useState(null);
-  const [selectedAssignment, setSelectedAssignment] = useState(null);
-  const [filteredAssignments, setFilteredAssignments] = useState([]);
+  const [difficulty, setDifficulty] = useState("easy");
+  const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchAssignments();
+    getAssignments()
+      .then(data => {
+        setAssignments(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Assignment fetch error", err);
+        setLoading(false);
+      });
   }, []);
 
-  const fetchAssignments = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await getAssignments();
-      if (!data || data.length === 0) {
-        setError('No assignments found. Please seed the database with sample data.');
-        setAssignments([]);
-        setFilteredAssignments([]);
-      } else {
-        setAssignments(data);
-        setFilteredAssignments(data);
-      }
-    } catch (err) {
-      setError(`Failed to load assignments: ${err.message}`);
-      setAssignments([]);
-      setFilteredAssignments([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDifficultyChange = (difficulty) => {
-    setSelectedDifficulty(difficulty);
-    if (difficulty === null) {
-      setFilteredAssignments(assignments);
-    } else {
-      const filtered = assignments.filter(
-        (assignment) =>
-          assignment.difficulty?.toLowerCase() === difficulty.toLowerCase()
-      );
-      setFilteredAssignments(filtered);
-    }
-    setSelectedAssignment(null);
-  };
+  const filtered = assignments.filter(
+    a => a.difficulty?.toLowerCase() === difficulty
+  );
 
   return (
-    <div className="assignment-list-container">
-      {/* Sidebar */}
-      <aside className="assignment-sidebar">
-        <DifficultyFilter
-          selectedDifficulty={selectedDifficulty}
-          onDifficultyChange={handleDifficultyChange}
-        />
+    <div className="layout">
+      <aside className="sidebar">
+        <h2>Assignments</h2>
 
-        <div className="assignments-header">
-          <h3>📚 Assignments</h3>
-          <span className="count">{filteredAssignments.length}</span>
+        <div className="tabs">
+          {[
+            { label: "Easy", value: "easy" },
+            { label: "Medium", value: "medium" },
+            { label: "Hard", value: "hard" }
+          ].map(d => (
+            <button
+              key={d.value}
+              className={difficulty === d.value ? "active" : ""}
+              onClick={() => {
+                setDifficulty(d.value);
+                setSelected(null);
+              }}
+            >
+              {d.label}
+            </button>
+          ))}
         </div>
 
-        {loading && (
-          <div className="loading">
-            <span className="spinner"></span>
-            <p>Loading assignments...</p>
-          </div>
+        {loading && <p className="muted">Loading...</p>}
+        {!loading && filtered.length === 0 && (
+          <p className="muted">No assignments available</p>
         )}
 
-        {error && !loading && (
-          <div className="sidebar-error">
-            <p>⚠️ {error}</p>
-            <button onClick={fetchAssignments} className="retry-btn">
-              Retry
-            </button>
-          </div>
-        )}
-
-        {!loading && !error && filteredAssignments.length === 0 && (
-          <div className="empty-list">
-            <p>No assignments found for this difficulty level</p>
-          </div>
-        )}
-
-        <div className="assignment-cards">
-          {filteredAssignments.map((assignment) => (
-            <AssignmentCard
-              key={assignment._id}
-              assignment={assignment}
-              isSelected={selectedAssignment?._id === assignment._id}
-              onSelect={() => setSelectedAssignment(assignment)}
-            />
+        <div className="list">
+          {filtered.map(a => (
+            <div
+              key={a._id}
+              className={`card ${selected?._id === a._id ? "selected" : ""}`}
+              onClick={() => setSelected(a)}
+            >
+              <h4>{a.title}</h4>
+              <p>{a.question}</p>
+            </div>
           ))}
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="editor-main">
-        <SqlEditor assignment={selectedAssignment} />
+      <main className="content">
+        {!selected ? (
+          <div className="empty">
+            <h2>Select an assignment to start</h2>
+            <p>Choose a problem from the left panel</p>
+          </div>
+        ) : (
+          <>
+            <h1>{selected.title}</h1>
+            <p className="question">{selected.question}</p>
+
+            <h3>Sample Tables</h3>
+            {selected.sampleTables?.map(t => (
+              <div key={t.tableName} className="table-box">
+                <strong>{t.tableName}</strong>
+                <ul>
+                  {t.columns.map(c => (
+                    <li key={c.columnName}>
+                      {c.columnName} — {c.dataType}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </>
+        )}
       </main>
     </div>
   );
-};
-
-export default AssignmentList;
+}

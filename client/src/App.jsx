@@ -1,5 +1,6 @@
 import React from 'react';
-import AssignmentList from './components/AssignmentList.jsx';
+import AssignmentList from "./pages/AssignmentList.jsx";
+
 import './styles/main.scss';
 
 function App() {
